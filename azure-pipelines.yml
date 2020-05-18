@@ -1,4 +1,3 @@
-
 trigger:
   branches:
     include:
@@ -29,11 +28,15 @@ stages:
       displayName: Install hassio builder
     - script: |
         docker run --rm --privileged -v ~/.docker:/root/.docker \
-        -v /zigbee2mqtt:/data homeassistant/amd64-builder --all -t /data --test
+        -v /run/docker.sock:/run/docker.sock:rw \
+        -v $(pwd)/zigbee2mqtt:/data:ro homeassistant/amd64-builder --all -t /data \
+        --no-latest --test
       displayName: Build zigbee2mqtt with tag :test (no push)
     - script: |
         docker run --rm --privileged -v ~/.docker:/root/.docker \
-        -v /zigbee2mqtt-edge:/data homeassistant/amd64-builder --all -t /data --test
+        -v /run/docker.sock:/run/docker.sock:rw \
+        -v $(pwd)/zigbee2mqtt-edge:/data:ro homeassistant/amd64-builder --all -t /data \
+        --no-latest --test
       displayName: Build zigbee2mqtt-edge with tag :test (no push)
 
 
@@ -52,17 +55,13 @@ stages:
       displayName: Login to Docker Hub
     - script: sudo docker pull homeassistant/amd64-builder
       displayName: Install hassio builder
-    # untagged push to master -> build and push images with :test
+    # untagged push to master -> build and push edge images with :test
     - script: |
         docker run --rm --privileged -v ~/.docker:/root/.docker \
-        -v /zigbee2mqtt:/data homeassistant/amd64-builder --all -t /data \
-        --version test --no-latest
-      displayName: Build zigbee2mqtt with tag :test
-    - script: |
-        docker run --rm --privileged -v ~/.docker:/root/.docker \
-        -v /zigbee2mqtt-edge:/data homeassistant/amd64-builder --all -t /data \
-        --version test
-      displayName: Build zigbee2mqtt-edge with tag :test and :latest
+        -v /run/docker.sock:/run/docker.sock:rw \
+        -v $(pwd)/zigbee2mqtt-edge:/data homeassistant/amd64-builder --all -t /data \
+        --no-cache
+      displayName: Build and push zigbee2mqtt-edge with tag :test and :latest
 
   - job: build_and_push_release
     displayName: Build and Push release
@@ -73,20 +72,20 @@ stages:
       # check tag version matches json config
       - script: |
             echo "test"
-      #     SOURCE='$(Build.SourceBranch)'
-      #     TAG="${SOURCE/refs\/tags\//}"
-      #     CONFIG_VER="$(jq -r '.version' ./zigbee2mqtt/config.json)"
-      #     if ["${TAG//v}" = "$CONFIG_VER"]; then
-              # echo "##vso[task.setvariable variable=CONFIG_VER]$CONFIG_VER" 
-      #       exit 0
-      #     else
-      #       echo "git tag $TAG does not match config.json version" && exit 1
-      #     fi
+            SOURCE='$(Build.SourceBranch)'
+            TAG="${SOURCE/refs\/tags\//}"
+            CONFIG_VER="$(jq -r '.version' ./zigbee2mqtt/config.json)"
+            if ["${TAG//v}" = "$CONFIG_VER"]; then
+              exit 0
+            else
+              echo "git tag $TAG does not match config.json version" && exit 1
+            fi
   
-      # tagged push to master -> build and push images with tag :latest and :git_tag
-    # - script: |
-    #     docker run --rm --privileged -v ~/.docker:/root/.docker \
-    #     -v ./zigbee2mqtt:/data homeassistant/amd64-builder --all -t /data \
-    #     --version "$CONFIG_VER"
-    #   condition: succeeded()
+      # tagged push to master -> build and push images with tag :latest and :version (from config)
+      - script: |
+          CONFIG_VER="$(jq -r '.version' ./zigbee2mqtt/config.json)"
+          docker run --rm --privileged -v ~/.docker:/root/.docker \
+          -v /run/docker.sock:/run/docker.sock:rw \
+          -v $(pwd)/zigbee2mqtt:/data homeassistant/amd64-builder --all -t /data
+        condition: succeeded()
 
