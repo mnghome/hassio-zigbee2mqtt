@@ -100,7 +100,7 @@
     "serial": {
       "port": "str",
       "disable_led": "bool?",
-      "adapter": "str"
+      "adapter": "match(^zstack|deconz$)?"
     },
     "ban": [
       "str?"
