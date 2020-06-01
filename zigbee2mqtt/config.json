@@ -1,6 +1,6 @@
 {
   "name": "zigbee2mqtt",
-  "version": "1.13.1",
+  "version": "1.13.1.1",
   "slug": "zigbee2mqtt",
   "description": "Zigbee to MQTT Bridge",
   "auto_uart": true,
@@ -36,8 +36,7 @@
       "password": "my_password"
     },
     "serial": {
-      "port": "/dev/ttyACM0",
-      "adapter": "deconz"
+      "port": "/dev/ttyACM0"
     },
     "advanced": {
       "pan_id": 6754,
@@ -65,7 +64,6 @@
     "ban": [],
     "whitelist": [],
     "queue": {},
-    "experimental": {},
     "socat": {
       "enabled": false,
       "master": "pty,raw,echo=0,link=/dev/ttyZ2M,mode=777",
@@ -99,8 +97,7 @@
     },
     "serial": {
       "port": "str",
-      "disable_led": "bool?",
-      "adapter": "match(^zstack|deconz$)?"
+      "disable_led": "bool?"
     },
     "ban": [
       "str?"
@@ -135,9 +132,6 @@
     "queue": {
       "delay": "int?",
       "simultaneously": "int?"
-    },
-    "experimental": {
-      "transmit_power": "int?"
     },
     "socat": {
       "enabled": "bool?",
